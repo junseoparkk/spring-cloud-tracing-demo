@@ -1,0 +1,146 @@
+version: "3"
+
+networks:
+  msa-net:
+
+services:
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - msa-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9411/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  eureka:
+    build:
+      context: ..
+      dockerfile: eureka-server/Dockerfile
+    container_name: eureka
+    ports:
+      - "8761:8761"
+    environment:
+      # 포트/이름 (yml에서 이미 지정되어 있으면 생략 가능)
+      SERVER_PORT: 8761
+      SPRING_APPLICATION_NAME: eureka-server
+      # 유레카 서버는 자기 자신 등록/조회 비활성 (yml에 이미 있다면 무시됨)
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+      EUREKA_CLIENT_FETCH_REGISTRY: "false"
+    networks:
+      - msa-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: gateway/Dockerfile
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      eureka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      SPRING_APPLICATION_NAME: gateway
+      # 컨테이너 간 통신은 'localhost' 대신 서비스명 사용
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
+      # Micrometer Zipkin 엔드포인트
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+    networks:
+      - msa-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  user-service:
+    build:
+      context: ..
+      dockerfile: user-service/Dockerfile
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      eureka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8081
+      SPRING_APPLICATION_NAME: USER-SERVICE
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+    networks:
+      - msa-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  order-service:
+    build:
+      context: ..
+      dockerfile: order-service/Dockerfile
+    container_name: order-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      eureka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8082
+      SPRING_APPLICATION_NAME: ORDER-SERVICE
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+    networks:
+      - msa-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  inventory-service:
+    build:
+      context: ..
+      dockerfile: inventory-service/Dockerfile
+    container_name: inventory-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      eureka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8083
+      SPRING_APPLICATION_NAME: INVENTORY-SERVICE
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+    networks:
+      - msa-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
