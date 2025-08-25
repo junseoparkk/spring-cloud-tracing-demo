@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: GATEWAY
+    name: gateway
   cloud:
     gateway:
       discovery:
@@ -13,15 +13,15 @@ spring:
 
       routes:
         - id: user-service
-          uri: lb://USER-SERVICE
+          uri: lb://user-service
           predicates:
             - Path=/users/**
         - id: order-service
-          uri: lb://ORDER-SERVICE
+          uri: lb://order-service
           predicates:
             - Path=/orders/**
         - id: inventory-service
-          uri: lb://INVENTORY-SERVICE
+          uri: lb://inventory-service
           predicates:
             - Path=/inventories/**
 

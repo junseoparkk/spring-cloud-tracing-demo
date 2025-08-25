@@ -1,8 +1,6 @@
 package com.demo.inventory_service.inventory;
 
 import com.demo.inventory_service.product.Product;
-import com.demo.inventory_service.product.ProductRepository;
-import com.demo.inventory_service.product.ProductResponse;
 import com.demo.inventory_service.product.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,7 +28,7 @@ public class InventoryService {
     @Transactional
     public InventoryResponse decreaseStock(Long productId, int quantity) {
         Product product = productService.getById(productId);
-        Inventory inventory = inventoryRepository.findById(productId).orElseThrow();
+        Inventory inventory = inventoryRepository.findByProductId(productId).orElseThrow();
 
         if (inventory.getStock() < quantity) {
             throw new IllegalArgumentException("[ERROR] Not enough stock");
