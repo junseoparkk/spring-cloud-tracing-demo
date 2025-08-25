@@ -1,4 +1,4 @@
-package com.demo.order_service;
+package com.demo.order_service.order;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

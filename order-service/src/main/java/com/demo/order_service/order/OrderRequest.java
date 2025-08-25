@@ -1,4 +1,4 @@
-package com.demo.order_service;
+package com.demo.order_service.order;
 
 public record OrderRequest(
         Long userId,
